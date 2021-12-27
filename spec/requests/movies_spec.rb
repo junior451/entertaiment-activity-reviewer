@@ -3,7 +3,7 @@ require 'rails_helper'
 RSpec.describe "Movies", type: :request do
   before do
     Movie.create(title:"First Movie", thoughts:"it was good", rating:3, is_current:false)
-    Movie.create(title:"Second Movie", thoughts:"it was great", rating:5, is_current:false)
+    Movie.create(title:"Second Movie", thoughts:"it was great", rating:5, is_current:true)
   end
 
   describe "GET /movies" do
@@ -57,7 +57,7 @@ RSpec.describe "Movies", type: :request do
 
   describe "POST /movies" do
     context "With Valid Params" do
-      let(:movie_info) { { movie: { title:"Third Movie", thoughts:"Not bad actually", rating: 3, is_current: true } } }
+      let(:movie_info) { { movie: { title:"Third Movie", thoughts:"Not bad actually", rating: 3, is_current: false } } }
 
       before { post '/movies', params: movie_info }
 
@@ -68,6 +68,19 @@ RSpec.describe "Movies", type: :request do
 
       it "returns the correct response" do
         expect(response).to have_http_status(:created)
+      end
+    end
+
+    context "When the movie is set to be the current movie" do
+      let(:movie_info) { { movie: { title:"Current Movie", thoughts:"Not bad actually", rating: 3, is_current: true } } }
+      
+      before { post '/movies', params: movie_info }
+
+      it "sets the movie to be the only current movie" do
+        movie = Movie.last
+      
+        expect(movie.is_current).to be true
+        expect(Movie.where(is_current: true).count).to eq(1)
       end
     end
     
@@ -90,7 +103,6 @@ RSpec.describe "Movies", type: :request do
   
         before { post '/movies', params: movie_info }
   
-        
         it "returns error messages" do
           expect(JSON.parse(response.body)).to include("Title is too long (maximum is 25 characters)")
           expect(JSON.parse(response.body)).to include("Thoughts is too long (maximum is 100 characters)")
@@ -102,7 +114,7 @@ RSpec.describe "Movies", type: :request do
 
   describe "put /movies/:id" do
     context "With valid params" do
-      let(:movie_update_info) { { movie: { title:"Updated Title", thoughts:"Updated thoughts", rating:3, is_current: true } } }
+      let(:movie_update_info) { { movie: { title:"Updated Title", thoughts:"Updated thoughts", rating:3, is_current: false } } }
 
       before { put "/movies/#{Movie.last.id}", params: movie_update_info }
 
@@ -114,6 +126,22 @@ RSpec.describe "Movies", type: :request do
       it "returns the correct response" do
         expect(response).to have_http_status(:success)
       end
+    end
+
+    context "when movie is set to true to be the current movie" do
+      let(:movie_update_info) { { movie: { title:"Updated Title", thoughts:"Updated thoughts", rating:3, is_current: true } } }
+
+      before { put "/movies/#{Movie.first.id}", params: movie_update_info }
+
+      it "should set the movie to be the only current movie" do
+        expect(Movie.first.is_current).to be true
+        expect(Movie.where(is_current: true).count).to eq(1)
+      end
+
+      it "should return the correct response" do
+        expect(response).to have_http_status(:success)
+      end
+      
     end
 
     context "With invalid params" do
@@ -176,7 +204,6 @@ RSpec.describe "Movies", type: :request do
           expect(last_movie_before_update).to eq(last_movie_after_update)
         end
       end
-
     end
   end
 

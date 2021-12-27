@@ -1,4 +1,6 @@
 class MoviesController < ApplicationController
+  include CurrentMovieManagement
+
   before_action :find_movie, only: [:show, :update, :destroy]
 
   def index
@@ -13,6 +15,10 @@ class MoviesController < ApplicationController
   def create
     @movie = Movie.new(movie_params)
 
+    if(@movie.is_current == true)
+      reset_current_movie
+    end
+
     if(@movie.save)
       render json: @movie, status: :created
     else
@@ -21,6 +27,10 @@ class MoviesController < ApplicationController
   end
 
   def update
+    if(movie_params[:is_current] == "true")
+      reset_current_movie
+    end
+
     if(@movie.update(movie_params))
       render json: @movie
     else

@@ -1,9 +1,11 @@
 require 'rails_helper'
 
 RSpec.describe "Movies", type: :request do
+  let(:user1) { User.create(username:"Jay144", email:"jay1@gmail.com", password:"pass44") }
+
   before do
-    Movie.create(title:"First Movie", thoughts:"it was good", rating:3, is_current:false)
-    Movie.create(title:"Second Movie", thoughts:"it was great", rating:5, is_current:true)
+    Movie.create(title:"First Movie", thoughts:"it was good", rating:3, is_current:false, user:user1)
+    Movie.create(title:"Second Movie", thoughts:"it was great", rating:5, is_current:true, user:user1)
   end
 
   describe "GET /movies" do
@@ -57,7 +59,7 @@ RSpec.describe "Movies", type: :request do
 
   describe "POST /movies" do
     context "With Valid Params" do
-      let(:movie_info) { { movie: { title:"Third Movie", thoughts:"Not bad actually", rating: 3, is_current: false } } }
+      let(:movie_info) { { movie: { title:"Third Movie", thoughts:"Not bad actually", rating: 3, is_current: false, user_id: user1.id } } }
 
       before { post '/movies', params: movie_info }
 
@@ -72,7 +74,7 @@ RSpec.describe "Movies", type: :request do
     end
 
     context "When the movie is set to be the current movie" do
-      let(:movie_info) { { movie: { title:"Current Movie", thoughts:"Not bad actually", rating: 3, is_current: true } } }
+      let(:movie_info) { { movie: { title:"Current Movie", thoughts:"Not bad actually", rating: 3, is_current: true, user_id: user1.id } } }
       
       before { post '/movies', params: movie_info }
 
@@ -95,6 +97,7 @@ RSpec.describe "Movies", type: :request do
           expect(JSON.parse(response.body)).to include("Title is too short (minimum is 3 characters)")
           expect(JSON.parse(response.body)).to include("Thoughts is too short (minimum is 5 characters)")
           expect(JSON.parse(response.body)).to include("Rating is not included in the list")
+          expect(JSON.parse(response.body)).to include("User must exist", "User can't be blank")
         end
       end
 
